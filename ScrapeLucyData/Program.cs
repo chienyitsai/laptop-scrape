@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,27 +12,49 @@ namespace ScrapeLucyData
     {
         static void Main(string[] args)
         {
+            //load html from website
             HtmlWeb web = new HtmlWeb();
-            HtmlDocument document = 
+            HtmlDocument document =
                 web.Load("https://www.bol.com/nl/t/top-10-windows-laptops/N/42976/?page=1&sort=rank");
 
-            HtmlNode [] allproducts =
+            HtmlNode[] products =
                 document.DocumentNode.SelectNodes("//div[@class='product-item__content']").ToArray();
 
-            HtmlNode[] titles =
-                document.DocumentNode.SelectNodes("//a[@data-test='product-title']").ToArray();
+            string title;
+            HtmlNode[] spec;
+            string inch;
+            string display;
+            string processor;
+            string memory;
+            string price;
 
-            string title; 
-
-            foreach (HtmlNode item in titles)
+            using (StreamWriter writer = new StreamWriter("bol.txt"))
             {
-                //get product title
-                title = item.InnerText;
-                Console.WriteLine("product name: " + title);
-                //get product specs
-                
-                //options
-                //get product price
+                //write header 
+                writer.WriteLine
+                    ("title" + "\t" + "inch" + "\t" + "display" + "\t" + "processor" + "\t"
+                    + "memory" + "\t" + "price");
+                foreach (var product in products)
+                {
+                    title =
+                        product.SelectNodes(".//a[@data-test='product-title']")
+                        .First().InnerText;
+                    spec =
+                        product.SelectNodes(".//span").ToArray();
+                    inch = spec[0].InnerText;
+                    display = spec[1].InnerText;
+                    processor = spec[2].InnerText;
+                    memory = spec[3].InnerText;
+                    price =
+                        product.SelectNodes(".//span[@data-test='price']")
+                        .Where(x => x.InnerText.Contains('-')).First().InnerText;
+                    price = price.Replace(",\n", "").Replace("-\n", "");
+                    //write row
+                    writer.WriteLine   
+                        (title + "\t" + inch + "\t" + display + "\t" + processor + "\t"
+                        + memory + "\t" + price);
+                }
+
             }
         }
     }
